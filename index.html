@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuratore Scale - DXF Export</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <header>
+    <h1>Configuratore Scale</h1>
+    <p class="subtitle">Configura, visualizza ed esporta in DXF per AutoCAD</p>
+  </header>
+
+  <main>
+    <div class="panel-left">
+      <!-- Configurazione Globale -->
+      <section class="config-section">
+        <h2>Parametri Generali</h2>
+        <div class="form-group">
+          <label for="stairType">Tipo di scala</label>
+          <select id="stairType">
+            <option value="linear">In linea</option>
+            <option value="l-shape">A L (90°)</option>
+            <option value="u-shape">A U (180°)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="stairWidth">Larghezza scala (cm)</label>
+          <input type="number" id="stairWidth" value="100" min="60" step="1">
+        </div>
+        <div class="form-group">
+          <label for="slabThickness">Spessore solaio (cm)</label>
+          <input type="number" id="slabThickness" value="25" min="10" step="1">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="useBlondel"> Verifica Blondel (2a+p=62÷64)
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rampe -->
+      <section class="config-section" id="rampsContainer">
+        <div class="section-header">
+          <h2>Rampe</h2>
+          <button id="addRampBtn" class="btn btn-small">+ Aggiungi Rampa</button>
+        </div>
+        <div id="rampsList"></div>
+      </section>
+
+      <!-- Connessioni (pianerottoli / spicchi) -->
+      <section class="config-section" id="connectionsContainer">
+        <div class="section-header">
+          <h2>Pianerottoli / Spicchi</h2>
+        </div>
+        <div id="connectionsList"></div>
+      </section>
+
+      <!-- Viste da esportare -->
+      <section class="config-section">
+        <h2>Viste da esportare nel DXF</h2>
+        <div class="form-group">
+          <label><input type="checkbox" id="exportPlan" checked> Pianta</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="exportSide" checked> Vista laterale (sezione longitudinale)</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="exportFront"> Vista frontale (sezione trasversale)</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="exportDimensions" checked> Quotature</label>
+        </div>
+      </section>
+
+      <!-- Azioni -->
+      <section class="config-section actions">
+        <button id="calculateBtn" class="btn btn-primary">Calcola e Anteprima</button>
+        <button id="exportDxfBtn" class="btn btn-success">Esporta DXF</button>
+      </section>
+
+      <!-- Riepilogo -->
+      <section class="config-section" id="summarySection" style="display:none;">
+        <h2>Riepilogo</h2>
+        <div id="summaryContent"></div>
+      </section>
+    </div>
+
+    <div class="panel-right">
+      <div class="canvas-controls">
+        <button id="viewPlan" class="view-btn active" data-view="plan">Pianta</button>
+        <button id="viewSide" class="view-btn" data-view="side">Vista Laterale</button>
+        <button id="viewFront" class="view-btn" data-view="front">Vista Frontale</button>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="previewCanvas"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
