@@ -410,7 +410,7 @@ export class DxfExporter {
         case 'LINE':
           dxf += '0\nLINE\n8\n' + ent.layer + '\n';
           dxf += '10\n' + r(ent.x1) + '\n20\n' + r(ent.y1) + '\n30\n0.0\n';
-          dxf += '11\n' + r(ent.x2) + '\n20\n' + r(ent.y2) + '\n31\n0.0\n';
+          dxf += '11\n' + r(ent.x2) + '\n21\n' + r(ent.y2) + '\n31\n0.0\n';
           break;
 
         case 'LWPOLYLINE':
