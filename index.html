@@ -7,99 +7,288 @@
   <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-  <header>
+
+  <!-- SCHERMATA SELEZIONE TIPOLOGIA -->
+  <div id="typePicker" class="type-picker">
     <h1>Configuratore Scale</h1>
-    <p class="subtitle">Configura, visualizza ed esporta in DXF per AutoCAD</p>
-  </header>
+    <p class="subtitle">Seleziona la tipologia di scala da progettare</p>
+    <div class="type-grid">
+      <div class="type-card" data-type="straight">
+        <div class="type-icon">
+          <svg viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="10" y1="70" x2="30" y2="70"/>
+            <line x1="30" y1="70" x2="30" y2="58"/>
+            <line x1="30" y1="58" x2="50" y2="58"/>
+            <line x1="50" y1="58" x2="50" y2="46"/>
+            <line x1="50" y1="46" x2="70" y2="46"/>
+            <line x1="70" y1="46" x2="70" y2="34"/>
+            <line x1="70" y1="34" x2="90" y2="34"/>
+            <line x1="90" y1="34" x2="90" y2="22"/>
+            <line x1="90" y1="22" x2="110" y2="22"/>
+          </svg>
+        </div>
+        <h3>Scala Dritta</h3>
+        <p>Una rampa, direzione unica</p>
+      </div>
+      <div class="type-card" data-type="l-landing">
+        <div class="type-icon">
+          <svg viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="10" y1="70" x2="25" y2="70"/><line x1="25" y1="70" x2="25" y2="60"/>
+            <line x1="25" y1="60" x2="40" y2="60"/><line x1="40" y1="60" x2="40" y2="50"/>
+            <rect x="40" y="35" width="20" height="15" fill="rgba(255,200,87,0.2)" stroke="#ffc857"/>
+            <line x1="60" y1="45" x2="72" y2="45"/><line x1="72" y1="45" x2="72" y2="35"/>
+            <line x1="72" y1="35" x2="84" y2="35"/><line x1="84" y1="35" x2="84" y2="25"/>
+            <line x1="84" y1="25" x2="96" y2="25"/>
+          </svg>
+        </div>
+        <h3>Scala a L con pianerottolo</h3>
+        <p>Due rampe a 90° con pianerottolo</p>
+      </div>
+      <div class="type-card" data-type="l-winder">
+        <div class="type-icon">
+          <svg viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="10" y1="70" x2="25" y2="70"/><line x1="25" y1="70" x2="25" y2="60"/>
+            <line x1="25" y1="60" x2="40" y2="60"/><line x1="40" y1="60" x2="40" y2="50"/>
+            <path d="M40,50 L40,30 L60,30" fill="rgba(233,69,96,0.15)" stroke="#e94560"/>
+            <line x1="40" y1="40" x2="55" y2="30"/>
+            <line x1="60" y1="40" x2="72" y2="40"/><line x1="72" y1="40" x2="72" y2="30"/>
+            <line x1="72" y1="30" x2="84" y2="30"/>
+          </svg>
+        </div>
+        <h3>Scala a L con gradini a ventaglio</h3>
+        <p>Due rampe a 90° con gradini a spicchio</p>
+      </div>
+      <div class="type-card" data-type="u-landing">
+        <div class="type-icon">
+          <svg viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="15" y1="70" x2="28" y2="70"/><line x1="28" y1="70" x2="28" y2="62"/>
+            <line x1="28" y1="62" x2="41" y2="62"/><line x1="41" y1="62" x2="41" y2="54"/>
+            <rect x="41" y="25" width="38" height="29" fill="rgba(255,200,87,0.2)" stroke="#ffc857"/>
+            <line x1="79" y1="44" x2="92" y2="44"/><line x1="92" y1="44" x2="92" y2="36"/>
+            <line x1="92" y1="36" x2="105" y2="36"/><line x1="105" y1="36" x2="105" y2="28"/>
+            <line x1="105" y1="28" x2="105" y2="25"/>
+          </svg>
+        </div>
+        <h3>Scala a U con pianerottolo</h3>
+        <p>Due rampe a 180° con pianerottolo</p>
+      </div>
+      <div class="type-card" data-type="u-winder">
+        <div class="type-icon">
+          <svg viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="15" y1="70" x2="28" y2="70"/><line x1="28" y1="70" x2="28" y2="62"/>
+            <line x1="28" y1="62" x2="41" y2="62"/><line x1="41" y1="62" x2="41" y2="54"/>
+            <path d="M41,54 Q41,25 79,25" fill="rgba(233,69,96,0.15)" stroke="#e94560"/>
+            <line x1="41" y1="40" x2="65" y2="25"/>
+            <line x1="79" y1="36" x2="92" y2="36"/><line x1="92" y1="36" x2="92" y2="28"/>
+            <line x1="92" y1="28" x2="105" y2="28"/>
+          </svg>
+        </div>
+        <h3>Scala a U con gradini a ventaglio</h3>
+        <p>Due rampe a 180° con gradini a spicchio</p>
+      </div>
+      <div class="type-card" data-type="three-flight">
+        <div class="type-icon">
+          <svg viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="70" x2="15" y2="70"/><line x1="15" y1="70" x2="15" y2="63"/>
+            <line x1="15" y1="63" x2="25" y2="63"/><line x1="25" y1="63" x2="25" y2="56"/>
+            <rect x="25" y="42" width="14" height="14" fill="rgba(255,200,87,0.2)" stroke="#ffc857"/>
+            <line x1="39" y1="50" x2="52" y2="50"/><line x1="52" y1="50" x2="52" y2="43"/>
+            <line x1="52" y1="43" x2="65" y2="43"/>
+            <rect x="65" y="28" width="14" height="15" fill="rgba(255,200,87,0.2)" stroke="#ffc857"/>
+            <line x1="79" y1="36" x2="92" y2="36"/><line x1="92" y1="36" x2="92" y2="28"/>
+            <line x1="92" y1="28" x2="105" y2="28"/>
+          </svg>
+        </div>
+        <h3>Scala a 3 rampe</h3>
+        <p>Tre rampe con 2 pianerottoli (180°)</p>
+      </div>
+    </div>
+  </div>
 
-  <main>
-    <div class="panel-left">
-      <!-- Configurazione Globale -->
-      <section class="config-section">
-        <h2>Parametri Generali</h2>
-        <div class="form-group">
-          <label for="stairType">Tipo di scala</label>
-          <select id="stairType">
-            <option value="linear">In linea</option>
-            <option value="l-shape">A L (90°)</option>
-            <option value="u-shape">A U (180°)</option>
-          </select>
+  <!-- SCHERMATA CONFIGURATORE -->
+  <div id="configurator" class="configurator" style="display:none;">
+    <header>
+      <div class="header-content">
+        <button id="backBtn" class="btn btn-back">&larr; Cambia tipologia</button>
+        <div>
+          <h1 id="configTitle">Configuratore Scale</h1>
+          <p class="subtitle" id="configSubtitle"></p>
         </div>
-        <div class="form-group">
-          <label for="stairWidth">Larghezza scala (cm)</label>
-          <input type="number" id="stairWidth" value="100" min="60" step="1">
-        </div>
-        <div class="form-group">
-          <label for="slabThickness">Spessore solaio (cm)</label>
-          <input type="number" id="slabThickness" value="25" min="10" step="1">
-        </div>
-        <div class="form-row">
+      </div>
+    </header>
+
+    <main>
+      <div class="panel-left">
+
+        <!-- Dimensioni apertura -->
+        <section class="config-section">
+          <h2>Dimensioni apertura</h2>
           <div class="form-group">
-            <label>
-              <input type="checkbox" id="useBlondel"> Verifica Blondel (2a+p=62÷64)
-            </label>
+            <label for="totalHeight">Altezza piano (da pavimento a pavimento) (cm)</label>
+            <input type="number" id="totalHeight" value="300" min="100" step="1">
           </div>
-        </div>
-      </section>
+          <div class="form-group" id="lengthGroup1">
+            <label for="rampLength1">Lunghezza proiezione rampa 1 (cm)</label>
+            <input type="number" id="rampLength1" value="350" min="100" step="1">
+          </div>
+          <div class="form-group" id="lengthGroup2" style="display:none;">
+            <label for="rampLength2">Lunghezza proiezione rampa 2 (cm)</label>
+            <input type="number" id="rampLength2" value="350" min="100" step="1">
+          </div>
+          <div class="form-group" id="lengthGroup3" style="display:none;">
+            <label for="rampLength3">Lunghezza proiezione rampa 3 (cm)</label>
+            <input type="number" id="rampLength3" value="200" min="100" step="1">
+          </div>
+          <div class="form-group">
+            <label for="stairWidth">Larghezza scala (cm)</label>
+            <input type="number" id="stairWidth" value="100" min="60" step="1">
+          </div>
+        </section>
 
-      <!-- Rampe -->
-      <section class="config-section" id="rampsContainer">
-        <div class="section-header">
-          <h2>Rampe</h2>
-          <button id="addRampBtn" class="btn btn-small">+ Aggiungi Rampa</button>
-        </div>
-        <div id="rampsList"></div>
-      </section>
+        <!-- Gradini -->
+        <section class="config-section">
+          <h2>Gradini</h2>
+          <div class="form-group">
+            <label for="numSteps1">N. gradini rampa 1</label>
+            <input type="number" id="numSteps1" value="14" min="3" max="20" step="1">
+          </div>
+          <div class="form-group" id="numStepsGroup2" style="display:none;">
+            <label for="numSteps2">N. gradini rampa 2</label>
+            <input type="number" id="numSteps2" value="14" min="3" max="20" step="1">
+          </div>
+          <div class="form-group" id="numStepsGroup3" style="display:none;">
+            <label for="numSteps3">N. gradini rampa 3</label>
+            <input type="number" id="numSteps3" value="8" min="3" max="20" step="1">
+          </div>
+          <div class="form-group">
+            <label for="stepThickness">Spessore pedata (cm)</label>
+            <input type="number" id="stepThickness" value="4" min="1" max="10" step="0.5">
+          </div>
+          <div class="form-group">
+            <label for="nosing">Sporgenza (naso) (cm)</label>
+            <input type="number" id="nosing" value="3" min="0" max="6" step="0.5">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><input type="checkbox" id="hasRiser" checked> Alzata (sottogrado)</label>
+            </div>
+          </div>
+          <div class="form-group" id="riserThicknessGroup">
+            <label for="riserThickness">Spessore alzata (cm)</label>
+            <input type="number" id="riserThickness" value="2" min="0.5" max="5" step="0.5">
+          </div>
+        </section>
 
-      <!-- Connessioni (pianerottoli / spicchi) -->
-      <section class="config-section" id="connectionsContainer">
-        <div class="section-header">
-          <h2>Pianerottoli / Spicchi</h2>
-        </div>
-        <div id="connectionsList"></div>
-      </section>
+        <!-- Pianerottolo (solo per tipi con pianerottolo) -->
+        <section class="config-section" id="landingSection" style="display:none;">
+          <h2>Pianerottolo</h2>
+          <div class="form-group">
+            <label for="landingDepth">Profondità pianerottolo (cm)</label>
+            <input type="number" id="landingDepth" value="100" min="60" step="1">
+          </div>
+          <div class="form-group" id="landingDepth2Group" style="display:none;">
+            <label for="landingDepth2">Profondità pianerottolo 2 (cm)</label>
+            <input type="number" id="landingDepth2" value="100" min="60" step="1">
+          </div>
+        </section>
 
-      <!-- Viste da esportare -->
-      <section class="config-section">
-        <h2>Viste da esportare nel DXF</h2>
-        <div class="form-group">
-          <label><input type="checkbox" id="exportPlan" checked> Pianta</label>
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="exportSide" checked> Vista laterale (sezione longitudinale)</label>
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="exportFront"> Vista frontale (sezione trasversale)</label>
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="exportDimensions" checked> Quotature</label>
-        </div>
-      </section>
+        <!-- Gradini a spicchio (solo per tipi winder) -->
+        <section class="config-section" id="winderSection" style="display:none;">
+          <h2>Gradini a ventaglio (spicchio)</h2>
+          <div class="form-group">
+            <label for="numWinders">N. gradini a ventaglio</label>
+            <input type="number" id="numWinders" value="3" min="2" max="8" step="1">
+          </div>
+          <div class="form-group">
+            <label for="innerRadius">Raggio interno (cm)</label>
+            <input type="number" id="innerRadius" value="10" min="0" max="50" step="1">
+          </div>
+        </section>
 
-      <!-- Azioni -->
-      <section class="config-section actions">
-        <button id="calculateBtn" class="btn btn-primary">Calcola e Anteprima</button>
-        <button id="exportDxfBtn" class="btn btn-success">Esporta DXF</button>
-      </section>
+        <!-- Struttura portante -->
+        <section class="config-section">
+          <h2>Struttura portante</h2>
+          <div class="form-group">
+            <label for="structureType">Tipo struttura</label>
+            <select id="structureType">
+              <option value="stringers">Cosciali laterali</option>
+              <option value="mono-stringer">Trave centrale (monocosciale)</option>
+              <option value="cantilever">A sbalzo (mensola)</option>
+            </select>
+          </div>
+          <div id="stringerParams">
+            <div class="form-group">
+              <label for="stringerWidth">Larghezza cosciale (cm)</label>
+              <input type="number" id="stringerWidth" value="5" min="2" max="20" step="0.5">
+            </div>
+            <div class="form-group">
+              <label for="stringerHeight">Altezza cosciale (cm)</label>
+              <input type="number" id="stringerHeight" value="25" min="10" max="50" step="1">
+            </div>
+          </div>
+        </section>
 
-      <!-- Riepilogo -->
-      <section class="config-section" id="summarySection" style="display:none;">
-        <h2>Riepilogo</h2>
-        <div id="summaryContent"></div>
-      </section>
-    </div>
+        <!-- Solaio -->
+        <section class="config-section">
+          <h2>Solaio</h2>
+          <div class="form-group">
+            <label for="slabThickness">Spessore solaio di arrivo (cm)</label>
+            <input type="number" id="slabThickness" value="25" min="10" step="1">
+          </div>
+          <div class="form-group" id="gapGroup" style="display:none;">
+            <label for="gapBetween">Distanza tra rampe parallele (cm)</label>
+            <input type="number" id="gapBetween" value="10" min="0" step="1">
+          </div>
+        </section>
 
-    <div class="panel-right">
-      <div class="canvas-controls">
-        <button id="viewPlan" class="view-btn active" data-view="plan">Pianta</button>
-        <button id="viewSide" class="view-btn" data-view="side">Vista Laterale</button>
-        <button id="viewFront" class="view-btn" data-view="front">Vista Frontale</button>
+        <!-- Opzioni -->
+        <section class="config-section">
+          <h2>Opzioni</h2>
+          <div class="form-group">
+            <label><input type="checkbox" id="useBlondel"> Verifica formula di Blondel (2a+p = 62÷64 cm)</label>
+          </div>
+        </section>
+
+        <!-- Viste da esportare -->
+        <section class="config-section">
+          <h2>Viste nel DXF</h2>
+          <div class="form-group">
+            <label><input type="checkbox" id="exportPlan" checked> Pianta</label>
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="exportSide" checked> Sezione longitudinale (vista laterale)</label>
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="exportFront"> Sezione trasversale (vista frontale)</label>
+          </div>
+        </section>
+
+        <!-- Azioni -->
+        <section class="config-section actions">
+          <button id="calculateBtn" class="btn btn-primary">Calcola e Anteprima</button>
+          <button id="exportDxfBtn" class="btn btn-success">Esporta DXF</button>
+        </section>
+
+        <!-- Riepilogo calcolo -->
+        <section class="config-section" id="summarySection" style="display:none;">
+          <h2>Riepilogo Calcolo</h2>
+          <div id="summaryContent"></div>
+        </section>
+
       </div>
-      <div class="canvas-wrapper">
-        <canvas id="previewCanvas"></canvas>
+
+      <div class="panel-right">
+        <div class="canvas-controls">
+          <button class="view-btn active" data-view="plan">Pianta</button>
+          <button class="view-btn" data-view="side">Vista Laterale</button>
+          <button class="view-btn" data-view="front">Vista Frontale</button>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="previewCanvas"></canvas>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

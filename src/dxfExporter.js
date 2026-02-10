@@ -1,454 +1,283 @@
 /**
- * Modulo export DXF.
- * Genera file DXF compatibile con AutoCAD con pianta, vista laterale, vista frontale e quotature.
- * Usa formato DXF AC1009 (R12) per massima compatibilità.
+ * Export DXF - formato AC1009 (R12) per massima compatibilità AutoCAD.
+ * Unità: centimetri.
  */
-
-// Scala: 1 unità DXF = 1 cm
 
 export class DxfExporter {
   constructor() {
     this.entities = [];
-    this.layers = [];
-    this._defineDefaultLayers();
   }
 
-  _defineDefaultLayers() {
-    this.layers = [
-      { name: '0', color: 7 },
-      { name: 'GRADINI', color: 5 },          // Blu
-      { name: 'CONTORNO', color: 3 },          // Verde
-      { name: 'PIANEROTTOLO', color: 2 },      // Giallo
-      { name: 'SPICCHIO', color: 1 },          // Rosso
-      { name: 'QUOTATURE', color: 8 },         // Grigio
-      { name: 'ALZATE', color: 1 },            // Rosso
-      { name: 'PEDATE', color: 5 },            // Blu
-      { name: 'SOLAIO', color: 8 },            // Grigio
-      { name: 'SEZIONE', color: 4 },           // Ciano
-      { name: 'FRECCIA', color: 8 },           // Grigio
-      { name: 'TESTI', color: 7 },             // Bianco
-    ];
-  }
-
-  /**
-   * Genera il DXF completo dalla configurazione calcolata.
-   */
-  generate(stairData, options) {
+  generate(data, options) {
     this.entities = [];
-    const { exportPlan, exportSide, exportFront, exportDimensions } = options;
-
-    let offsetX = 0;
+    const { exportPlan, exportSide, exportFront } = options;
+    let ox = 0;
 
     if (exportPlan) {
-      this._generatePlan(stairData, 0, 0);
-      offsetX = this._getMaxX(stairData) + 200;
+      this._planView(data, 0, 0);
+      ox = this._maxX() + 200;
     }
 
     if (exportSide) {
-      this._generateSideView(stairData, offsetX, 0);
-      offsetX += this._getSideViewWidth(stairData) + 200;
+      this._sideView(data, ox, 0);
+      ox += this._sideWidth(data) + 200;
     }
 
     if (exportFront) {
-      this._generateFrontView(stairData, offsetX, 0);
+      this._frontView(data, ox, 0);
     }
 
-    return this._buildDxfString();
+    return this._build();
   }
 
   // ─── PIANTA ─────────────────────────────────────────────────
 
-  _generatePlan(data, ox, oy) {
-    for (const geo of data.rampGeometries) {
-      const { steps, width, dirX, dirY, perpX, perpY, startX, startY, totalRun } = geo;
+  _planView(data, ox, oy) {
+    const pg = data.planGeometry;
+    if (!pg) return;
 
-      // Contorno rampa
-      const endX = startX + dirX * totalRun;
-      const endY = startY + dirY * totalRun;
-      this._addPolyline('CONTORNO', [
-        { x: ox + startX, y: oy + startY },
-        { x: ox + endX, y: oy + endY },
-        { x: ox + endX + perpX * width, y: oy + endY + perpY * width },
-        { x: ox + startX + perpX * width, y: oy + startY + perpY * width },
-      ], true);
-
-      // Linee gradini
-      for (const step of steps) {
-        this._addLine('GRADINI',
-          ox + step.x3, oy + step.y3,
-          ox + step.x4, oy + step.y4
-        );
-      }
-
-      // Numeri gradini
-      for (const step of steps) {
-        const cx = (step.x1 + step.x4) / 2;
-        const cy = (step.y1 + step.y4) / 2;
-        this._addText('TESTI', ox + cx, oy + cy, String(step.index + 1), 3);
-      }
-
-      // Freccia direzione salita
-      if (steps.length > 1) {
-        const midPx = perpX * width * 0.5;
-        const midPy = perpY * width * 0.5;
-        const first = steps[0];
-        const last = steps[steps.length - 1];
-        this._addLine('FRECCIA',
-          ox + first.x1 + midPx, oy + first.y1 + midPy,
-          ox + last.x3 + midPx, oy + last.y3 + midPy
-        );
-      }
-
-      // Connessione
-      if (geo.connection) {
-        this._drawConnectionDxf(geo.connection, ox, oy);
-      }
-
-      // Quotature pianta
-      if (steps.length > 0) {
-        // Quota lunghezza rampa
-        const qy = oy + startY - 15;
-        this._addAlignedDimension('QUOTATURE',
-          ox + startX, oy + startY, ox + endX, oy + endY,
-          qy, `${geo.totalRun}`
-        );
-        // Quota larghezza
-        this._addAlignedDimension('QUOTATURE',
-          ox + startX, oy + startY, ox + startX + perpX * width, oy + startY + perpY * width,
-          ox + startX - 15, `${width}`
-        );
-      }
-    }
-  }
-
-  _drawConnectionDxf(conn, ox, oy) {
-    if (conn.type === 'landing' && conn.corners) {
-      const pts = conn.corners.map(c => ({ x: ox + c.x, y: oy + c.y }));
-      this._addPolyline('PIANEROTTOLO', pts, true);
-      this._addText('TESTI', ox + conn.x + 15, oy + conn.y + 15, 'PIANEROTTOLO', 3);
+    // Pianerottoli
+    for (const l of pg.landings) {
+      this._polyline('PIANEROTTOLO', l.corners.map(p => [ox + p.x, oy + p.y]), true);
     }
 
-    if (conn.type === 'winder' && conn.winderSteps) {
-      for (const ws of conn.winderSteps) {
-        this._addPolyline('SPICCHIO', [
-          { x: ox + ws.innerStart.x, y: oy + ws.innerStart.y },
-          { x: ox + ws.outerStart.x, y: oy + ws.outerStart.y },
-          { x: ox + ws.outerEnd.x, y: oy + ws.outerEnd.y },
-          { x: ox + ws.innerEnd.x, y: oy + ws.innerEnd.y },
+    // Winders
+    for (const wg of pg.winders) {
+      for (const ws of wg.steps) {
+        this._polyline('SPICCHIO', [
+          [ox + ws.innerStart.x, oy + ws.innerStart.y],
+          [ox + ws.outerStart.x, oy + ws.outerStart.y],
+          [ox + ws.outerEnd.x, oy + ws.outerEnd.y],
+          [ox + ws.innerEnd.x, oy + ws.innerEnd.y],
         ], true);
+        const cx = (ws.innerStart.x + ws.outerEnd.x) / 2;
+        const cy = (ws.innerStart.y + ws.outerEnd.y) / 2;
+        this._text('TESTI', ox + cx, oy + cy, String(ws.label), 3);
       }
     }
+
+    // Rampe
+    for (const ramp of pg.ramps) {
+      this._polyline('CONTORNO', ramp.outline.map(p => [ox + p.x, oy + p.y]), true);
+      for (const s of ramp.steps) {
+        this._line('GRADINI', ox + s.x3, oy + s.y3, ox + s.x4, oy + s.y4);
+        const cx = (s.x1 + s.x4) / 2;
+        const cy = (s.y1 + s.y4) / 2;
+        this._text('TESTI', ox + cx, oy + cy, String(s.label), 2.5);
+      }
+      // Freccia direzione
+      const d = ramp.direction;
+      this._line('FRECCIA', ox + d.startX, oy + d.startY, ox + d.endX, oy + d.endY);
+    }
+
+    this._text('TESTI', ox, oy - 10, 'PIANTA', 5);
   }
 
   // ─── VISTA LATERALE ─────────────────────────────────────────
 
-  _generateSideView(data, ox, oy) {
-    let runOffset = 0;
+  _sideView(data, ox, oy) {
+    const sp = data.sideProfile;
+    if (!sp) return;
 
-    // Label
-    this._addText('TESTI', ox, oy + data.totalHeight + 20, 'VISTA LATERALE', 5);
-
-    for (let r = 0; r < data.rampGeometries.length; r++) {
-      const ramp = data.rampResults[r];
-      const geo = data.rampGeometries[r];
-      const startZ = geo.startZ;
-
-      // Profilo a scalino
-      const profilePts = [{ x: ox + runOffset, y: oy + startZ }];
-
-      for (let s = 0; s < ramp.numTreads; s++) {
-        const x = runOffset + s * ramp.actualTread;
-        const z = startZ + s * ramp.actualRiser;
-        // Alzata
-        profilePts.push({ x: ox + x, y: oy + z + ramp.actualRiser });
-        // Pedata
-        profilePts.push({ x: ox + x + ramp.actualTread, y: oy + z + ramp.actualRiser });
-      }
-
-      // Ultima alzata
-      const lastX = runOffset + ramp.numTreads * ramp.actualTread;
-      const lastZ = startZ + ramp.numTreads * ramp.actualRiser;
-      profilePts.push({ x: ox + lastX, y: oy + lastZ + ramp.actualRiser });
-
-      this._addPolyline('CONTORNO', profilePts, false);
-
-      // Linee di quotatura per pedate e alzate
-      // Quota singola alzata (prima)
-      if (ramp.numTreads > 0) {
-        this._addLinearDimension('QUOTATURE',
-          ox + runOffset, oy + startZ,
-          ox + runOffset, oy + startZ + ramp.actualRiser,
-          ox + runOffset - 10,
-          `a=${ramp.actualRiser}`, true
-        );
-        // Quota singola pedata (prima)
-        this._addLinearDimension('QUOTATURE',
-          ox + runOffset, oy + startZ + ramp.actualRiser,
-          ox + runOffset + ramp.actualTread, oy + startZ + ramp.actualRiser,
-          oy + startZ + ramp.actualRiser - 10,
-          `p=${ramp.actualTread}`, false
-        );
-      }
-
-      runOffset += ramp.totalRun;
-
-      // Connessione nella vista laterale
-      if (geo.connection && geo.connection.type === 'landing') {
-        const depth = geo.connection.depth || 100;
-        const z = geo.startZ + ramp.totalRise;
-        this._addLine('PIANEROTTOLO', ox + runOffset, oy + z, ox + runOffset + depth, oy + z);
-        // Bordo inferiore pianerottolo (spessore)
-        this._addLine('PIANEROTTOLO', ox + runOffset, oy + z - 15, ox + runOffset + depth, oy + z - 15);
-        this._addLine('PIANEROTTOLO', ox + runOffset, oy + z, ox + runOffset, oy + z - 15);
-        this._addLine('PIANEROTTOLO', ox + runOffset + depth, oy + z, ox + runOffset + depth, oy + z - 15);
-        runOffset += depth;
-      } else if (geo.connection && geo.connection.type === 'winder') {
-        const numW = geo.connection.numWinders || 3;
-        const baseZ = geo.startZ + ramp.totalRise;
-        const rH = ramp.actualRiser;
-        for (let w = 0; w < numW; w++) {
-          this._addLine('SPICCHIO', ox + runOffset + w * 30, oy + baseZ + w * rH, ox + runOffset + w * 30, oy + baseZ + (w + 1) * rH);
-          this._addLine('SPICCHIO', ox + runOffset + w * 30, oy + baseZ + (w + 1) * rH, ox + runOffset + (w + 1) * 30, oy + baseZ + (w + 1) * rH);
-        }
-        runOffset += numW * 30;
-      }
+    // Profilo gradini
+    for (const seg of sp.segments) {
+      const layer = seg.type === 'riser' || seg.type === 'winder-riser' ? 'ALZATE' :
+                    seg.type === 'landing' ? 'PIANEROTTOLO' :
+                    seg.type.startsWith('winder') ? 'SPICCHIO' : 'PEDATE';
+      this._line(layer, ox + seg.x1, oy + seg.z1, ox + seg.x2, oy + seg.z2);
     }
 
-    // Linea pavimento
-    this._addLine('SOLAIO', ox - 20, oy, ox + runOffset + 40, oy);
+    // Pavimento
+    this._line('SOLAIO', ox - 20, oy, ox + sp.totalRun + 40, oy);
 
-    // Solaio di arrivo
-    const topY = oy + data.totalHeight;
-    this._addPolyline('SOLAIO', [
-      { x: ox + runOffset - 20, y: topY },
-      { x: ox + runOffset + 60, y: topY },
-      { x: ox + runOffset + 60, y: topY + data.slabThickness },
-      { x: ox + runOffset - 20, y: topY + data.slabThickness },
+    // Solaio arrivo
+    const sT = data.slabThickness || 25;
+    this._polyline('SOLAIO', [
+      [ox + sp.totalRun - 30, oy + sp.totalRise],
+      [ox + sp.totalRun + 60, oy + sp.totalRise],
+      [ox + sp.totalRun + 60, oy + sp.totalRise + sT],
+      [ox + sp.totalRun - 30, oy + sp.totalRise + sT],
     ], true);
 
-    // Quota altezza totale
-    this._addLinearDimension('QUOTATURE',
-      ox + runOffset + 40, oy,
-      ox + runOffset + 40, oy + data.totalHeight,
-      ox + runOffset + 55,
-      `H=${data.totalHeight}`, true
-    );
+    // Quota altezza
+    this._dimV('QUOTATURE', ox + sp.totalRun + 40, oy, oy + sp.totalRise, `H=${data.totalHeight}`);
+    // Quota sviluppo
+    this._dimH('QUOTATURE', ox, ox + sp.totalRun, oy - 15, `L=${r2(sp.totalRun)}`);
+    // Quota singola alzata e pedata (prima rampa)
+    if (data.ramps.length > 0) {
+      const rm = data.ramps[0];
+      this._dimV('QUOTATURE', ox - 10, oy, oy + rm.riserHeight, `a=${rm.riserHeight}`);
+      this._dimH('QUOTATURE', ox, ox + rm.treadDepth, oy + rm.riserHeight - 8, `p=${rm.treadDepth}`);
+    }
 
-    // Quota sviluppo totale
-    this._addLinearDimension('QUOTATURE',
-      ox, oy - 15,
-      ox + runOffset, oy - 15,
-      oy - 25,
-      `L=${round2(runOffset)}`, false
-    );
+    this._text('TESTI', ox, oy + sp.totalRise + sT + 15, 'VISTA LATERALE', 5);
   }
 
   // ─── VISTA FRONTALE ─────────────────────────────────────────
 
-  _generateFrontView(data, ox, oy) {
-    const width = data.stairWidth;
-    const totalH = data.totalHeight;
+  _frontView(data, ox, oy) {
+    const W = data.stairWidth;
+    const H = data.totalHeight;
 
-    // Label
-    this._addText('TESTI', ox, oy + totalH + 20, 'VISTA FRONTALE', 5);
-
-    // Contorno sezione
-    this._addPolyline('SEZIONE', [
-      { x: ox, y: oy },
-      { x: ox + width, y: oy },
-      { x: ox + width, y: oy + totalH },
-      { x: ox, y: oy + totalH },
+    this._polyline('SEZIONE', [
+      [ox, oy], [ox + W, oy], [ox + W, oy + H], [ox, oy + H],
     ], true);
 
-    // Linee tratteggiate dei gradini
-    const firstRamp = data.rampResults[0];
-    let z = 0;
-    for (let s = 0; s < firstRamp.numRisers; s++) {
-      z += firstRamp.actualRiser;
-      if (z >= totalH) break;
-      this._addLine('GRADINI', ox, oy + z, ox + width, oy + z);
-    }
-
-    // Quota larghezza
-    this._addLinearDimension('QUOTATURE',
-      ox, oy - 10,
-      ox + width, oy - 10,
-      oy - 20,
-      `L=${width}`, false
-    );
-
-    // Quota altezza
-    this._addLinearDimension('QUOTATURE',
-      ox + width + 10, oy,
-      ox + width + 10, oy + totalH,
-      ox + width + 25,
-      `H=${totalH}`, true
-    );
-  }
-
-  // ─── DXF PRIMITIVES ────────────────────────────────────────
-
-  _addLine(layer, x1, y1, x2, y2) {
-    this.entities.push({ type: 'LINE', layer, x1, y1, x2, y2 });
-  }
-
-  _addPolyline(layer, points, closed) {
-    this.entities.push({ type: 'LWPOLYLINE', layer, points, closed });
-  }
-
-  _addText(layer, x, y, text, height) {
-    this.entities.push({ type: 'TEXT', layer, x, y, text, height: height || 3 });
-  }
-
-  _addAlignedDimension(layer, x1, y1, x2, y2, dimLinePos, text) {
-    // Rappresentiamo la quota come linea + testo per compatibilità R12
-    this._addLine(layer, x1, y1, x2, y2);
-    const mx = (x1 + x2) / 2;
-    const my = (y1 + y2) / 2;
-    this._addText(layer, mx, my + 4, text, 2.5);
-  }
-
-  _addLinearDimension(layer, x1, y1, x2, y2, offset, text, vertical) {
-    if (vertical) {
-      // Linea quotatura verticale
-      this._addLine(layer, offset, y1, offset, y2);
-      // Linee di richiamo
-      this._addLine(layer, x1, y1, offset, y1);
-      this._addLine(layer, x1, y2, offset, y2);
-      // Frecce (piccole linee)
-      this._addLine(layer, offset - 1.5, y1 + 3, offset, y1);
-      this._addLine(layer, offset + 1.5, y1 + 3, offset, y1);
-      this._addLine(layer, offset - 1.5, y2 - 3, offset, y2);
-      this._addLine(layer, offset + 1.5, y2 - 3, offset, y2);
-      // Testo
-      this._addText(layer, offset + 3, (y1 + y2) / 2, text, 2.5);
-    } else {
-      // Linea quotatura orizzontale
-      this._addLine(layer, x1, offset, x2, offset);
-      // Linee di richiamo
-      this._addLine(layer, x1, y1, x1, offset);
-      this._addLine(layer, x2, y2, x2, offset);
-      // Frecce
-      this._addLine(layer, x1 + 3, offset - 1.5, x1, offset);
-      this._addLine(layer, x1 + 3, offset + 1.5, x1, offset);
-      this._addLine(layer, x2 - 3, offset - 1.5, x2, offset);
-      this._addLine(layer, x2 - 3, offset + 1.5, x2, offset);
-      // Testo
-      this._addText(layer, (x1 + x2) / 2, offset + 3, text, 2.5);
-    }
-  }
-
-  // ─── UTILITY ────────────────────────────────────────────────
-
-  _getMaxX(data) {
-    let maxX = 0;
-    for (const geo of data.rampGeometries) {
-      for (const step of geo.steps) {
-        maxX = Math.max(maxX, step.x3, step.x4);
-      }
-      if (geo.connection && geo.connection.corners) {
-        for (const c of geo.connection.corners) {
-          maxX = Math.max(maxX, c.x);
-        }
+    // Gradini tratteggiati
+    if (data.ramps.length > 0) {
+      const rm = data.ramps[0];
+      let z = 0;
+      for (let i = 0; i < rm.numSteps; i++) {
+        z += rm.riserHeight;
+        if (z >= H) break;
+        this._line('GRADINI', ox, oy + z, ox + W, oy + z);
       }
     }
-    return maxX;
+
+    this._dimH('QUOTATURE', ox, ox + W, oy - 10, `L=${W}`);
+    this._dimV('QUOTATURE', ox + W + 10, oy, oy + H, `H=${H}`);
+    this._text('TESTI', ox, oy + H + 15, 'VISTA FRONTALE', 5);
   }
 
-  _getSideViewWidth(data) {
-    let total = 0;
-    for (let r = 0; r < data.rampResults.length; r++) {
-      total += data.rampResults[r].totalRun;
-      const geo = data.rampGeometries[r];
-      if (geo.connection) {
-        if (geo.connection.type === 'landing') total += geo.connection.depth || 100;
-        else if (geo.connection.type === 'winder') total += (geo.connection.numWinders || 3) * 30;
-      }
+  // ─── PRIMITIVES ─────────────────────────────────────────────
+
+  _line(layer, x1, y1, x2, y2) {
+    this.entities.push({ t: 'L', layer, x1, y1, x2, y2 });
+  }
+
+  _polyline(layer, pts, closed) {
+    this.entities.push({ t: 'P', layer, pts, closed });
+  }
+
+  _text(layer, x, y, text, h) {
+    this.entities.push({ t: 'T', layer, x, y, text, h: h || 3 });
+  }
+
+  _dimH(layer, x1, x2, y, label) {
+    this._line(layer, x1, y, x2, y);
+    this._line(layer, x1, y - 3, x1, y + 3);
+    this._line(layer, x2, y - 3, x2, y + 3);
+    // Frecce
+    this._line(layer, x1, y, x1 + 2.5, y + 1.2);
+    this._line(layer, x1, y, x1 + 2.5, y - 1.2);
+    this._line(layer, x2, y, x2 - 2.5, y + 1.2);
+    this._line(layer, x2, y, x2 - 2.5, y - 1.2);
+    this._text(layer, (x1 + x2) / 2, y + 4, label, 2.5);
+  }
+
+  _dimV(layer, x, y1, y2, label) {
+    this._line(layer, x, y1, x, y2);
+    this._line(layer, x - 3, y1, x + 3, y1);
+    this._line(layer, x - 3, y2, x + 3, y2);
+    this._line(layer, x, y1, x - 1.2, y1 + 2.5);
+    this._line(layer, x, y1, x + 1.2, y1 + 2.5);
+    this._line(layer, x, y2, x - 1.2, y2 - 2.5);
+    this._line(layer, x, y2, x + 1.2, y2 - 2.5);
+    this._text(layer, x + 5, (y1 + y2) / 2, label, 2.5);
+  }
+
+  // ─── UTILS ──────────────────────────────────────────────────
+
+  _maxX() {
+    let mx = 0;
+    for (const e of this.entities) {
+      if (e.t === 'L') mx = Math.max(mx, e.x1, e.x2);
+      if (e.t === 'P') for (const p of e.pts) mx = Math.max(mx, p[0]);
+      if (e.t === 'T') mx = Math.max(mx, e.x);
     }
-    return total + 80;
+    return mx;
   }
 
-  // ─── DXF STRING BUILDER ────────────────────────────────────
+  _sideWidth(data) {
+    return (data.sideProfile ? data.sideProfile.totalRun : 0) + 100;
+  }
 
-  _buildDxfString() {
-    let dxf = '';
+  // ─── DXF BUILD ──────────────────────────────────────────────
+
+  _build() {
+    const layers = [
+      { n: '0', c: 7 },
+      { n: 'CONTORNO', c: 3 },
+      { n: 'GRADINI', c: 5 },
+      { n: 'PIANEROTTOLO', c: 2 },
+      { n: 'SPICCHIO', c: 1 },
+      { n: 'ALZATE', c: 1 },
+      { n: 'PEDATE', c: 5 },
+      { n: 'SOLAIO', c: 8 },
+      { n: 'SEZIONE', c: 4 },
+      { n: 'QUOTATURE', c: 8 },
+      { n: 'FRECCIA', c: 8 },
+      { n: 'TESTI', c: 7 },
+    ];
+
+    let d = '';
 
     // HEADER
-    dxf += '0\nSECTION\n2\nHEADER\n';
-    dxf += '9\n$ACADVER\n1\nAC1009\n';
-    dxf += '9\n$INSBASE\n10\n0.0\n20\n0.0\n30\n0.0\n';
-    dxf += '9\n$INSUNITS\n70\n5\n'; // Centimetri
-    dxf += '0\nENDSEC\n';
+    d += '0\nSECTION\n2\nHEADER\n';
+    d += '9\n$ACADVER\n1\nAC1009\n';
+    d += '9\n$INSUNITS\n70\n5\n';
+    d += '0\nENDSEC\n';
 
     // TABLES
-    dxf += '0\nSECTION\n2\nTABLES\n';
+    d += '0\nSECTION\n2\nTABLES\n';
 
-    // Layer table
-    dxf += '0\nTABLE\n2\nLAYER\n70\n' + this.layers.length + '\n';
-    for (const layer of this.layers) {
-      dxf += '0\nLAYER\n2\n' + layer.name + '\n70\n0\n62\n' + layer.color + '\n6\nCONTINUOUS\n';
+    // LTYPE
+    d += '0\nTABLE\n2\nLTYPE\n70\n1\n';
+    d += '0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0\n';
+    d += '0\nENDTAB\n';
+
+    // LAYER
+    d += '0\nTABLE\n2\nLAYER\n70\n' + layers.length + '\n';
+    for (const l of layers) {
+      d += '0\nLAYER\n2\n' + l.n + '\n70\n0\n62\n' + l.c + '\n6\nCONTINUOUS\n';
     }
-    dxf += '0\nENDTAB\n';
+    d += '0\nENDTAB\n';
 
-    // Linetype table
-    dxf += '0\nTABLE\n2\nLTYPE\n70\n1\n';
-    dxf += '0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0\n';
-    dxf += '0\nENDTAB\n';
+    // STYLE
+    d += '0\nTABLE\n2\nSTYLE\n70\n1\n';
+    d += '0\nSTYLE\n2\nSTANDARD\n70\n0\n40\n0.0\n41\n1.0\n50\n0.0\n71\n0\n42\n2.5\n3\ntxt\n4\n\n';
+    d += '0\nENDTAB\n';
 
-    // Style table
-    dxf += '0\nTABLE\n2\nSTYLE\n70\n1\n';
-    dxf += '0\nSTYLE\n2\nSTANDARD\n70\n0\n40\n0.0\n41\n1.0\n50\n0.0\n71\n0\n42\n2.5\n3\ntxt\n4\n\n';
-    dxf += '0\nENDTAB\n';
-
-    dxf += '0\nENDSEC\n';
+    d += '0\nENDSEC\n';
 
     // ENTITIES
-    dxf += '0\nSECTION\n2\nENTITIES\n';
+    d += '0\nSECTION\n2\nENTITIES\n';
 
-    for (const ent of this.entities) {
-      switch (ent.type) {
-        case 'LINE':
-          dxf += '0\nLINE\n8\n' + ent.layer + '\n';
-          dxf += '10\n' + r(ent.x1) + '\n20\n' + r(ent.y1) + '\n30\n0.0\n';
-          dxf += '11\n' + r(ent.x2) + '\n21\n' + r(ent.y2) + '\n31\n0.0\n';
-          break;
-
-        case 'LWPOLYLINE':
-          dxf += '0\nPOLYLINE\n8\n' + ent.layer + '\n66\n1\n70\n' + (ent.closed ? '1' : '0') + '\n';
-          for (const pt of ent.points) {
-            dxf += '0\nVERTEX\n8\n' + ent.layer + '\n10\n' + r(pt.x) + '\n20\n' + r(pt.y) + '\n30\n0.0\n';
-          }
-          dxf += '0\nSEQEND\n8\n' + ent.layer + '\n';
-          break;
-
-        case 'TEXT':
-          dxf += '0\nTEXT\n8\n' + ent.layer + '\n';
-          dxf += '10\n' + r(ent.x) + '\n20\n' + r(ent.y) + '\n30\n0.0\n';
-          dxf += '40\n' + r(ent.height) + '\n1\n' + ent.text + '\n';
-          dxf += '72\n1\n';  // center justified
-          dxf += '11\n' + r(ent.x) + '\n21\n' + r(ent.y) + '\n31\n0.0\n';
-          break;
+    for (const e of this.entities) {
+      if (e.t === 'L') {
+        d += '0\nLINE\n8\n' + e.layer + '\n';
+        d += '10\n' + f(e.x1) + '\n20\n' + f(e.y1) + '\n30\n0.0\n';
+        d += '11\n' + f(e.x2) + '\n21\n' + f(e.y2) + '\n31\n0.0\n';
+      }
+      else if (e.t === 'P') {
+        d += '0\nPOLYLINE\n8\n' + e.layer + '\n66\n1\n70\n' + (e.closed ? '1' : '0') + '\n';
+        for (const p of e.pts) {
+          d += '0\nVERTEX\n8\n' + e.layer + '\n10\n' + f(p[0]) + '\n20\n' + f(p[1]) + '\n30\n0.0\n';
+        }
+        d += '0\nSEQEND\n8\n' + e.layer + '\n';
+      }
+      else if (e.t === 'T') {
+        d += '0\nTEXT\n8\n' + e.layer + '\n';
+        d += '10\n' + f(e.x) + '\n20\n' + f(e.y) + '\n30\n0.0\n';
+        d += '40\n' + f(e.h) + '\n1\n' + e.text + '\n';
       }
     }
 
-    dxf += '0\nENDSEC\n';
-    dxf += '0\nEOF\n';
+    d += '0\nENDSEC\n';
+    d += '0\nEOF\n';
 
-    return dxf;
+    return d;
   }
 }
 
-function r(v) {
+function f(v) {
   return (Math.round(v * 1000) / 1000).toFixed(3);
 }
 
-function round2(v) {
+function r2(v) {
   return Math.round(v * 100) / 100;
 }
 
-/**
- * Helper: scarica stringa come file .dxf
- */
 export function downloadDxf(dxfString, filename) {
   const blob = new Blob([dxfString], { type: 'application/dxf' });
   const url = URL.createObjectURL(blob);
